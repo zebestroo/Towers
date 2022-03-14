@@ -1,4 +1,5 @@
 import pygame
+import copy
 import sys
 from pygame.locals import *
 
@@ -18,15 +19,16 @@ music_tower_install = pygame.mixer.Sound("music/tower_install.mp3")
 
 music_battle.set_volume(0.5)
 
-
 scr = pygame.image.load("images/main.png")
 nodes_first = [(0, 90), (765, 90), (765, 315), (135, 315), (135, 810), (630, 810), (630, 675), (270, 675), (270, 450), (855, 450), (855, 945)]
 nodes_second = [(0, 135), (720,135), (720, 270), (90, 270), (90, 855), (675, 855), (675, 630), (315, 630), (315, 495), (810, 495), (810, 945)]
 list_of_available = []
 
+
 run = True
 
 class standart_enemy:
+    price = 200
     def __init__(self, image, health, speed, x, y, stage, tp, index):
         self.image = image
         self.health = health
@@ -55,7 +57,7 @@ class tower:
         
 
     def attack(self, enemy):
-        pass
+        enem.health -= 0.05
 
     def radius_up(self):
         self.radius += 10
@@ -76,11 +78,13 @@ unavailable_set = set()
 width = 45
 height = 45
 TOWER = False
+tw = None
 enemies = []
 Towers = []
 lines = []
-tw = None
 main_counter = 0
+cash = 400
+hp = 1
 
 
 def create_list(nodes):
@@ -107,15 +111,15 @@ def create_list(nodes):
 create_list(nodes_first)
 create_list(nodes_second)
 
-def create_enemies():
+def create_enemies(health):
     i = 0
     x = 0
     while i < 16:
         y = 90
         if i % 2 == 0:
-            enemies.append(standart_enemy(pygame.image.load("images/enemy.png"), 10, 1, x, y, 1, 1, i))
+            enemies.append(standart_enemy(pygame.image.load("images/enemy.png"), 16 * health, 1, x, y, 1, 1, i))
         else:
-            enemies.append(standart_enemy(pygame.image.load("images/enemy.png"), 10, 1, x, y + 45, 1, 2, i))
+            enemies.append(standart_enemy(pygame.image.load("images/enemy.png"), 16 * health, 1, x, y + 45, 1, 2, i))
         x -= 45
         i += 1
 
@@ -154,15 +158,25 @@ def move(enemy, total_speed, counter):
     return counter
 
 def DrawTowers():
-    for tw in Towers:
-        screen.blit(tw.image, (tw.x, tw.y))
+    for twr in Towers:
+        screen.blit(twr.image, (twr.x, twr.y))
 
 def DrawLines():
     for line in lines:
         pygame.draw.line(screen, line.color, (line.start_x, line.start_y), (line.end_x, line.end_y))
 
 def DrawEnemies():
+    global cash
     for enem in enemies:
+        if enem.health/hp < 1:
+            enemies.remove(enem)
+            cash += 5
+            continue
+
+        a = int(enem.health)
+        enem.image = pygame.image.load("images/enemy.png")
+        health = pygame.image.load(f"images/health/hp_{int(a/hp)}.png")
+        enem.image.blit(health, (0, 0))
         screen.blit(enem.image, (enem.x, enem.y))
 
 def DrawWindow():
@@ -188,37 +202,40 @@ while run:
     screen.blit(scr, (0, 0))
 
     if keys[pygame.K_SPACE]:
-        create_enemies()
+        create_enemies(hp)
         pygame.mixer.music.stop()
         pygame.mixer.Sound.play(music_battle)
         while len(enemies) != 0 and main_counter != 10:
             for enem in enemies:
-                for tw in Towers:
-                    if tw.check_radius(enem):
-                        tw.attack(enem)
-                        lines.append(line((0, 0, 0), tw.x + 22, tw.y + 22, enem.x + 22, enem.y + 22))
+                for twr in Towers:
+                    if twr.check_radius(enem):
+                        twr.attack(enem)
+                        lines.append(line((0, 0, 0), twr.x + 22, twr.y + 22, enem.x + 22, enem.y + 22))
                 main_counter = move(enem, 1, main_counter)
             DrawWindow()
             lines = []
 
         enemies = []
+        hp += 1
         pygame.mixer.Sound.stop(music_battle)
         pygame.mixer.music.play(-1)
+        cash *= 1.05
+        print(cash)
 
     main_counter = 0
 
 
-    if keys[pygame.K_t] or TOWER:
+    if cash >= standart_enemy.price and (keys[pygame.K_t] or TOWER):
         if tw == None:
+            print(type(tw))
             tw = tower(pygame.image.load("images/tower_black_1.png"), 1, 150, 0, 0)
         TOWER = True
-        Towers.append(tw)
 
         if keys[pygame.K_LEFT] and tw.x >= speed:
             tw.x -= speed
 
         if keys[pygame.K_RIGHT] and tw.x <= 900 - width - speed:
-           tw.x += speed
+            tw.x += speed
 
         if keys[pygame.K_UP] and tw.y >= speed:
             tw.y -= speed
@@ -228,21 +245,30 @@ while run:
 
         screen.blit(tw.image, (tw.x, tw.y))
 
+        pygame.draw.circle(screen, (0, 0, 0), (tw.x + 22, tw.y + 22),  tw.radius, 1)
+
         if keys[pygame.K_q]:
+            unavailable_set.remove((tw.x, tw.y))
             TOWER = False
-            Towers.remove(tw)
             tw = None
-            DrawWindow()
 
 
         if keys[pygame.K_p] and not((tw.x, tw.y) in unavailable_set):
+            cash -= standart_enemy.price
             pygame.mixer.music.pause()
             pygame.mixer.Sound.play(music_tower_install)
-            TOWER = False
+            Towers.append(tw)
             unavailable_set.add((tw.x, tw.y))
             tw = None
+            TOWER = False
+            print(cash)
+
         pygame.mixer.music.unpause()
 
-    DrawWindow()
+        DrawTowers()
+        pygame.display.update()
+
+    if not TOWER:
+        DrawWindow()
 
 pygame.quit()
