@@ -1,6 +1,7 @@
 import pygame
 import copy
 import sys
+import os.path
 from pygame.locals import *
 
 pygame.init()
@@ -11,15 +12,15 @@ screen = pygame.display.set_mode((1200, 990))
 
 pygame.display.set_caption("Towers")
 
-pygame.mixer.music.load("music/wait.mp3")
+pygame.mixer.music.load(os.path.abspath("music/wait.mp3"))
 pygame.mixer.music.set_volume(0.5)
 pygame.mixer.music.play(-1)
-music_battle = pygame.mixer.Sound("music/battle.mp3")
-music_tower_install = pygame.mixer.Sound("music/tower_install.mp3")
+music_battle = pygame.mixer.Sound(os.path.abspath("music/battle.mp3"))
+music_tower_install = pygame.mixer.Sound(os.path.abspath("music/tower_install.mp3"))
 
 music_battle.set_volume(0.5)
-
-scr = pygame.image.load("images/main.png")
+#os.path.abspath("main.png")
+scr = pygame.image.load(os.path.abspath("main.png"))
 nodes_first = [(0, 90), (765, 90), (765, 315), (135, 315), (135, 810), (630, 810), (630, 675), (270, 675), (270, 450), (855, 450), (855, 945)]
 nodes_second = [(0, 135), (720,135), (720, 270), (90, 270), (90, 855), (675, 855), (675, 630), (315, 630), (315, 495), (810, 495), (810, 945)]
 list_of_available = []
@@ -117,9 +118,9 @@ def create_enemies(health):
     while i < 16:
         y = 90
         if i % 2 == 0:
-            enemies.append(standart_enemy(pygame.image.load("images/enemy.png"), 16 * health, 1, x, y, 1, 1, i))
+            enemies.append(standart_enemy(pygame.image.load(os.path.abspath("enemy.png")), 16 * health, 0.5, x, y, 1, 1, i))
         else:
-            enemies.append(standart_enemy(pygame.image.load("images/enemy.png"), 16 * health, 1, x, y + 45, 1, 2, i))
+            enemies.append(standart_enemy(pygame.image.load(os.path.abspath("enemy.png")), 16 * health, 0.5, x, y + 45, 1, 2, i))
         x -= 45
         i += 1
 
@@ -174,8 +175,8 @@ def DrawEnemies():
             continue
 
         a = int(enem.health)
-        enem.image = pygame.image.load("images/enemy.png")
-        health = pygame.image.load(f"images/health/hp_{int(a/hp)}.png")
+        enem.image = pygame.image.load(os.path.abspath("enemy.png"))
+        health = pygame.image.load(os.path.abspath(f"images/health/hp_{int(a/hp)}.png"))
         enem.image.blit(health, (0, 0))
         screen.blit(enem.image, (enem.x, enem.y))
 
@@ -188,6 +189,7 @@ def DrawWindow():
 
 
 while run:
+    #pygame.time.delay(100)
     speed = 45
     if TOWER:
         pygame.time.delay(50)
@@ -219,7 +221,7 @@ while run:
         hp += 1
         pygame.mixer.Sound.stop(music_battle)
         pygame.mixer.music.play(-1)
-        cash *= 1.05
+        cash *= 1.1
         print(cash)
 
     main_counter = 0
@@ -228,7 +230,7 @@ while run:
     if cash >= standart_enemy.price and (keys[pygame.K_t] or TOWER):
         if tw == None:
             print(type(tw))
-            tw = tower(pygame.image.load("images/tower_black_1.png"), 1, 150, 0, 0)
+            tw = tower(pygame.image.load(os.path.abspath("tower_black_1.png")), 1, 150, 0, 0)
         TOWER = True
 
         if keys[pygame.K_LEFT] and tw.x >= speed:
